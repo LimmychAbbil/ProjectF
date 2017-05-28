@@ -1,5 +1,8 @@
 package client;
 
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.Socket;
 import java.net.SocketAddress;
 
@@ -22,10 +25,21 @@ public class Client {
         userName = "User 1";
         userPassword = "1";
 
-        try {
+        try (BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in))){
             Socket socket = new Socket(host, port);
-            socket.sendUrgentData(20);
             Thread.sleep(2000);
+            String query;
+            PrintWriter writer = new PrintWriter(socket.getOutputStream());
+            while (!(query = consoleReader.readLine()).equals("exit")) {
+                System.out.println("Sending \"" + query + "\"...");
+
+                writer.println(query);
+                writer.flush();
+
+            }
+            System.out.println("Exit command");
+            writer.close();
+
             socket.close();
         }
         catch (Exception e) {

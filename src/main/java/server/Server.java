@@ -1,8 +1,6 @@
 package server;
 
-import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.OutputStream;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
@@ -28,14 +26,27 @@ public class Server {
 
     public static void main(String[] args) throws Exception {
         BasicConfigurator.configure();
-        Logger logger = LoggerFactory.getLogger(Server.class);
+        final Logger logger = LoggerFactory.getLogger(Server.class);
         ServerSocket socket = new ServerSocket(31);
-        logger.warn("Server start");
-
-
+        logger.info("Server start");
         while (true) {
-            Socket userSocket = socket.accept();
-            logger.warn("Somebody have just connected. Ip " + userSocket.getInetAddress().toString());
+            final Socket userSocket = socket.accept();
+            logger.info("Somebody have just connected. Ip " + userSocket.getInetAddress().toString());
+            new Thread() {
+                @Override
+                public void run() {
+                    try {
+                        logger.info("Start processing input");
+                        BufferedReader socketInput = new BufferedReader(new InputStreamReader(userSocket.getInputStream()));
+                        while (true) {
+                            if (socketInput.ready()) {
+                                logger.info(socketInput.readLine());
+                            }
+                        }
+                    } catch (IOException e) {
+                    }
+                }
+            }.start();
         }
 
     }
