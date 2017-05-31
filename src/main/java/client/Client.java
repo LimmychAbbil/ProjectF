@@ -1,6 +1,7 @@
 package client;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.net.Socket;
@@ -14,7 +15,19 @@ public class Client {
     private static int port;
     private static String userName;
     private static String userPassword;
+    private static BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
+
     public static void main(String[] args) {
+
+        try {
+            System.out.println("Enter your user name");
+            userName = consoleReader.readLine();
+            System.out.println("Enter password");
+            userPassword = consoleReader.readLine();
+        }
+        catch (IOException e) {
+            e.printStackTrace();
+        }
 
         Client.connect();
     }
@@ -22,23 +35,23 @@ public class Client {
     public static void connect() {
         host = "localhost";
         port = 31;
-        userName = "User 1";
-        userPassword = "1";
 
-        try (BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in))){
+        try {
             Socket socket = new Socket(host, port);
             Thread.sleep(2000);
             String query;
-            PrintWriter writer = new PrintWriter(socket.getOutputStream());
+            PrintWriter messageSender = new PrintWriter(socket.getOutputStream());
+            messageSender.println(userName + "_ _" + userPassword);
+            messageSender.flush();
             while (!(query = consoleReader.readLine()).equals("exit")) {
                 System.out.println("Sending \"" + query + "\"...");
 
-                writer.println(query);
-                writer.flush();
+                messageSender.println(query);
+                messageSender.flush();
 
             }
             System.out.println("Exit command");
-            writer.close();
+            messageSender.close();
 
             socket.close();
         }

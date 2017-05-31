@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
  */
 public class Server {
     private static Map<String, String> users;
+    private static final Logger logger = LoggerFactory.getLogger(Server.class);
     static {
         users = new HashMap<>();
         users.put("Admin", "admin");
@@ -23,11 +24,8 @@ public class Server {
         users.put("User3", "3");
     }
 
-
-    public static void main(String[] args) throws Exception {
-        BasicConfigurator.configure();
-        final Logger logger = LoggerFactory.getLogger(Server.class);
-        ServerSocket socket = new ServerSocket(31);
+    public void startServer() throws IOException {
+        final ServerSocket socket = new ServerSocket(31);
         logger.info("Server start");
         while (true) {
             final Socket userSocket = socket.accept();
@@ -35,12 +33,20 @@ public class Server {
             new Thread() {
                 @Override
                 public void run() {
-                    try {
-                        logger.info("Start processing input");
-                        BufferedReader socketInput = new BufferedReader(new InputStreamReader(userSocket.getInputStream()));
+                    try (BufferedReader socketInput = new BufferedReader(new InputStreamReader(userSocket.getInputStream()))){
+                        logger.info("Authorising user...");
+                        while (!socketInput.ready()) {
+                        }
+                        String userName = socketInput.readLine();
+                        logger.info(userName);
+                        logger.info("Start processing user command");
+
                         while (true) {
                             if (socketInput.ready()) {
-                                logger.info(socketInput.readLine());
+                                String inputString = socketInput.readLine();
+                                logger.info(inputString);
+                                if (inputString.equalsIgnoreCase("exit")) break;
+
                             }
                         }
                     } catch (IOException e) {
@@ -48,6 +54,11 @@ public class Server {
                 }
             }.start();
         }
+    }
+
+    public static void main(String[] args) throws Exception {
+        BasicConfigurator.configure();
+        new Server().startServer();
 
     }
 }
