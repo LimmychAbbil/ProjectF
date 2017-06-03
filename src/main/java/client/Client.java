@@ -19,6 +19,10 @@ public class Client {
 
     public static void main(String[] args) {
 
+        Client.connect();
+    }
+
+    public static void inputCredentials() {
         try {
             System.out.println("Enter your user name");
             userName = consoleReader.readLine();
@@ -28,21 +32,25 @@ public class Client {
         catch (IOException e) {
             e.printStackTrace();
         }
-
-        Client.connect();
     }
-
     public static void connect() {
         host = "localhost";
         port = 31;
 
-        try {
-            Socket socket = new Socket(host, port);
+        try (Socket socket = new Socket(host, port);
+             PrintWriter messageSender = new PrintWriter(socket.getOutputStream());
+             BufferedReader socketInput = new BufferedReader(new InputStreamReader(socket.getInputStream()))) {
             Thread.sleep(2000);
+            boolean isAuthorized = false;
+            while (!isAuthorized) {
+                inputCredentials();
+                messageSender.println(userName + "_ _" + userPassword);
+                messageSender.flush();
+                Thread.sleep(200);
+                isAuthorized = socketInput.readLine().equals("Success");
+                System.out.println("Authorize successfully, write your commands");
+            }
             String query;
-            PrintWriter messageSender = new PrintWriter(socket.getOutputStream());
-            messageSender.println(userName + "_ _" + userPassword);
-            messageSender.flush();
             while (!(query = consoleReader.readLine()).equals("exit")) {
                 System.out.println("Sending \"" + query + "\"...");
 
@@ -52,8 +60,6 @@ public class Client {
             }
             System.out.println("Exit command");
             messageSender.close();
-
-            socket.close();
         }
         catch (Exception e) {
             e.printStackTrace();

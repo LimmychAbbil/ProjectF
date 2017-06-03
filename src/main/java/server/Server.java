@@ -18,10 +18,59 @@ public class Server {
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     static {
         users = new HashMap<>();
-        users.put("Admin", "admin");
-        users.put("User1", "1");
-        users.put("User2", "2");
-        users.put("User3", "3");
+        users.put("admin", "admin");
+        users.put("user1", "1");
+        users.put("user2", "2");
+        users.put("user3", "3");
+    }
+
+    private class UserHandler extends Thread {
+        private Socket userSocket;
+
+        public UserHandler(Socket userSocket) {
+            this.userSocket = userSocket;
+        }
+
+        private boolean checkAuth(String userName, String userPas) {
+            if (!Server.users.containsKey(userName)) return false;
+
+            return Server.users.get(userName).equals(userPas);
+        }
+        @Override
+        public void run() {
+
+            try (BufferedReader socketInput = new BufferedReader(new InputStreamReader(userSocket.getInputStream()));
+            PrintWriter socketOutput = new PrintWriter(userSocket.getOutputStream())){
+                logger.info("Authorising user...");
+                while (true) {
+                    String credentials = socketInput.readLine();
+                    String userName = credentials.split("_ _")[0];
+                    String userPassword = credentials.split("_ _")[1];
+                    if (checkAuth(userName, userPassword)) {
+                        socketOutput.println("Success");
+                        socketOutput.flush();
+                        logger.info("User " + userName + " successfully login");
+                        break;
+                    }
+                    else {
+                        logger.info("User " + userName + " input wrong credentials");
+                        socketOutput.println("Wrong credentials");
+                        socketOutput.flush();
+                    }
+                }
+                logger.info("Start processing user command");
+
+                while (true) {
+                    if (socketInput.ready()) {
+                        String inputString = socketInput.readLine();
+                        logger.info(inputString);
+                        if (inputString.equalsIgnoreCase("exit")) break;
+
+                    }
+                }
+            } catch (IOException e) {
+            }
+        }
     }
 
     public void startServer() throws IOException {
@@ -30,29 +79,9 @@ public class Server {
         while (true) {
             final Socket userSocket = socket.accept();
             logger.info("Somebody have just connected. Ip " + userSocket.getInetAddress().toString());
-            new Thread() {
-                @Override
-                public void run() {
-                    try (BufferedReader socketInput = new BufferedReader(new InputStreamReader(userSocket.getInputStream()))){
-                        logger.info("Authorising user...");
-                        while (!socketInput.ready()) {
-                        }
-                        String userName = socketInput.readLine();
-                        logger.info(userName);
-                        logger.info("Start processing user command");
-
-                        while (true) {
-                            if (socketInput.ready()) {
-                                String inputString = socketInput.readLine();
-                                logger.info(inputString);
-                                if (inputString.equalsIgnoreCase("exit")) break;
-
-                            }
-                        }
-                    } catch (IOException e) {
-                    }
-                }
-            }.start();
+            UserHandler userHandler = new UserHandler(userSocket);
+            userHandler.setDaemon(true);
+            userHandler.start();
         }
     }
 
