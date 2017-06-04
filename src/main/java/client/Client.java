@@ -58,6 +58,8 @@ public class Client {
                 messageSender.flush();
 
             }
+
+            //TODO release thread on server side when exit
             System.out.println("Exit command");
             messageSender.close();
         }

@@ -4,24 +4,27 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import server.users.User;
+import server.users.UserGroup;
 
 /**
  * Created by Limmy on 27.05.2017.
  */
 public class Server {
-    private static Map<String, String> users;
+    private static Set<User> users;
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     static {
-        users = new HashMap<>();
-        users.put("admin", "admin");
-        users.put("user1", "1");
-        users.put("user2", "2");
-        users.put("user3", "3");
+        users = new HashSet<>();
+        users.add(new User(UserGroup.ADMIN,"admin", "admin"));
+        users.add(new User("User1", "1"));
+        users.add(new User("User2", "2"));
     }
 
     private class UserHandler extends Thread {
@@ -32,9 +35,17 @@ public class Server {
         }
 
         private boolean checkAuth(String userName, String userPas) {
-            if (!Server.users.containsKey(userName)) return false;
+            boolean existingUser = false;
+            boolean correctPass = false;
+            for (User u: users) {
+                if (userName.equalsIgnoreCase(u.getUserName())) {
+                    existingUser = true;
+                    correctPass = u.checkPassword(userPas);
+                    break;
+                }
+            }
 
-            return Server.users.get(userName).equals(userPas);
+            return existingUser && correctPass;
         }
         @Override
         public void run() {
