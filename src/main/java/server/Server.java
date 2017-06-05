@@ -26,12 +26,20 @@ public class Server {
     static {
         filesToCheck = new ArrayList<>();
         filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile1.txt"));
-        filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile1.txt"));
+        filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile2.txt"));
         logger.info("All users will be checked for editing next files:" + filesToCheck);
 
         filesToReplace = new ArrayList<>();
         filesToReplace.add(Paths.get("src/main/resources/server/examples/replacableFile.txt"));
         logger.info("All users will be checked for editing next files and re-download it:" + filesToReplace);
+    }
+
+    private static String filesToCheckSummary;
+
+    private static String generateServerFilesSummary() {
+        //TODO it's a stub
+
+        return "someSummary";
     }
 
     private static Set<User> users;
@@ -42,7 +50,7 @@ public class Server {
         users.add(new User("User2", "2"));
     }
 
-    private class UserHandler extends Thread {
+    private static class UserHandler extends Thread {
         private Socket userSocket;
 
         public UserHandler(Socket userSocket) {
@@ -62,6 +70,37 @@ public class Server {
 
             return existingUser && correctPass;
         }
+
+        private void checkFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
+            if (filesToCheck.size() == 0) return;
+            StringBuilder filePathsToCheck = new StringBuilder();
+
+            filePathsToCheck.append(filesToCheck.get(0).getFileName());
+            for (int i = 1; i < filesToCheck.size(); i++) {
+                filePathsToCheck.append("\n").append(filesToCheck.get(i).getFileName());
+            }
+            serverOutput.println(filePathsToCheck.toString());
+            serverOutput.flush();
+
+            Thread.sleep(500);
+
+            StringBuilder clientUserSummary = new StringBuilder();
+            while (userInput.ready()) {
+                clientUserSummary.append(userInput.readLine());
+            }
+
+            if (clientUserSummary.toString().equals(filesToCheckSummary)) {
+                logger.info("This user's file are OK");
+            }
+            else {
+                logger.warn("This user's file was modified");
+            }
+        }
+
+        private void rewriteEditedFiles() {
+
+        }
+
         @Override
         public void run() {
 
@@ -76,7 +115,7 @@ public class Server {
                         socketOutput.println("Success");
                         socketOutput.flush();
                         logger.info("User " + userName + " successfully login, start checking files");
-                        //TODO check files here
+                        checkFiles(socketInput, socketOutput);
                         break;
                     }
                     else {
@@ -92,15 +131,16 @@ public class Server {
                         String inputString = socketInput.readLine();
                         logger.info(inputString);
                         if (inputString.equalsIgnoreCase("exit")) break;
-
                     }
                 }
-            } catch (IOException e) {
+                logger.info("User disconnected");
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
     }
 
-    public void startServer() throws IOException {
+    public static void startServer() throws IOException {
         final ServerSocket socket = new ServerSocket(31);
         logger.info("Server start");
         while (true) {
@@ -113,7 +153,8 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
-        new Server().startServer();
+        filesToCheckSummary = Server.generateServerFilesSummary();
+        Server.startServer();
 
     }
 }
