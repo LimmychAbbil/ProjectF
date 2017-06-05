@@ -3,10 +3,9 @@ package server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 
 import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
@@ -18,8 +17,24 @@ import server.users.UserGroup;
  * Created by Limmy on 27.05.2017.
  */
 public class Server {
-    private static Set<User> users;
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
+    static {
+        BasicConfigurator.configure();
+    }
+    private static List<Path> filesToCheck;
+    private static List<Path> filesToReplace;
+    static {
+        filesToCheck = new ArrayList<>();
+        filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile1.txt"));
+        filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile1.txt"));
+        logger.info("All users will be checked for editing next files:" + filesToCheck);
+
+        filesToReplace = new ArrayList<>();
+        filesToReplace.add(Paths.get("src/main/resources/server/examples/replacableFile.txt"));
+        logger.info("All users will be checked for editing next files and re-download it:" + filesToReplace);
+    }
+
+    private static Set<User> users;
     static {
         users = new HashSet<>();
         users.add(new User(UserGroup.ADMIN,"admin", "admin"));
@@ -60,7 +75,8 @@ public class Server {
                     if (checkAuth(userName, userPassword)) {
                         socketOutput.println("Success");
                         socketOutput.flush();
-                        logger.info("User " + userName + " successfully login");
+                        logger.info("User " + userName + " successfully login, start checking files");
+                        //TODO check files here
                         break;
                     }
                     else {
@@ -97,7 +113,6 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
-        BasicConfigurator.configure();
         new Server().startServer();
 
     }
