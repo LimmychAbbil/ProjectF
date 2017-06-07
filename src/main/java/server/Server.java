@@ -3,6 +3,7 @@ package server;
 import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
@@ -36,10 +37,19 @@ public class Server {
 
     private static String filesToCheckSummary;
 
-    private static String generateServerFilesSummary() {
-        //TODO it's a stub
+    private static String generateServerFilesSummary() throws IOException{
+        StringBuilder filesCheckSummary = new StringBuilder();
+        ;
+        for (Path file: filesToCheck) {
+            if (!Files.exists(file)) continue;
+            BufferedReader fileReader = new BufferedReader(new FileReader(file.toFile()));
+            while (fileReader.ready()) {
+                filesCheckSummary.append(fileReader.readLine()).append("\n");
+            }
 
-        return "someSummary";
+            fileReader.close();
+        }
+        return filesCheckSummary.toString();
     }
 
     private static Set<User> users;
@@ -86,7 +96,7 @@ public class Server {
 
             StringBuilder clientUserSummary = new StringBuilder();
             while (userInput.ready()) {
-                clientUserSummary.append(userInput.readLine());
+                clientUserSummary.append(userInput.readLine()).append("\n");
             }
 
             if (clientUserSummary.toString().equals(filesToCheckSummary)) {
@@ -94,6 +104,7 @@ public class Server {
             }
             else {
                 logger.warn("This user's file was modified");
+                System.out.println(clientUserSummary.toString() + "\n\n===\n\n " + filesToCheckSummary) ;
             }
         }
 

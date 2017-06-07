@@ -1,11 +1,12 @@
 package client;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.*;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Arrays;
 
 /**
  * Created by Limmy on 27.05.2017.
@@ -34,9 +35,24 @@ public class Client {
         }
     }
 
-    private static String generateFilesCheckSummary(String fileNames) {
-        //TODO it is a stub
-        return "someSummary";
+    private static String generateFilesCheckSummary(String fileNames) throws IOException {
+        StringBuilder filesCheckSummary = new StringBuilder();
+        String[] fileNamesArray = fileNames.split("\n");
+        for (String fileName:fileNamesArray) {
+            Path p = Paths.get("src/main/resources/client.examples/" + fileName);
+            if (!Files.exists(p)) {
+                System.out.println("Files doesn't exists " + p.getFileName());
+                continue;
+            }
+            BufferedReader fileReader = new BufferedReader(new FileReader(p.toFile()));
+            while (fileReader.ready()) {
+                filesCheckSummary.append(fileReader.readLine()).append("\n");
+            }
+
+            fileReader.close();
+        }
+        System.out.println("CLIENT SUMMARY " + filesCheckSummary);
+        return filesCheckSummary.toString().trim();
     }
 
 
@@ -61,9 +77,8 @@ public class Client {
             Thread.sleep(200);
             StringBuilder filesToCheck = new StringBuilder();
             while (socketInput.ready()) {
-                filesToCheck.append(socketInput.readLine());
+                filesToCheck.append(socketInput.readLine()).append("\n");
             }
-            System.out.println(generateFilesCheckSummary(""));
             messageSender.println(generateFilesCheckSummary(filesToCheck.toString()));
             messageSender.flush();
 
