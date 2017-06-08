@@ -51,7 +51,6 @@ public class Client {
 
             fileReader.close();
         }
-        System.out.println("CLIENT SUMMARY " + filesCheckSummary);
         return filesCheckSummary.toString().trim();
     }
 

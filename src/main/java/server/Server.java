@@ -39,7 +39,6 @@ public class Server {
 
     private static String generateServerFilesSummary() throws IOException{
         StringBuilder filesCheckSummary = new StringBuilder();
-        ;
         for (Path file: filesToCheck) {
             if (!Files.exists(file)) continue;
             BufferedReader fileReader = new BufferedReader(new FileReader(file.toFile()));
