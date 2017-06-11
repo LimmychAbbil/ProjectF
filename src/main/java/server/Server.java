@@ -18,6 +18,7 @@ import server.users.UserGroup;
  * Created by Limmy on 27.05.2017.
  */
 public class Server {
+
     private static final Logger logger = LoggerFactory.getLogger(Server.class);
     static {
         BasicConfigurator.configure();
@@ -36,8 +37,9 @@ public class Server {
     }
 
     private static String filesToCheckSummary;
+    private static String filesToReplaceSummary;
 
-    private static String generateServerFilesSummary() throws IOException{
+    private static String generateServerFilesSummary(List<Path> filesToCheck) throws IOException{
         StringBuilder filesCheckSummary = new StringBuilder();
         for (Path file: filesToCheck) {
             if (!Files.exists(file)) continue;
@@ -107,6 +109,9 @@ public class Server {
             }
         }
 
+        private boolean checkRewritableFiles(BufferedReader userInput, PrintWriter serverOutput) {
+            return true;
+        }
         private void rewriteEditedFiles() {
 
         }
@@ -126,6 +131,9 @@ public class Server {
                         socketOutput.flush();
                         logger.info("User " + userName + " successfully login, start checking files");
                         checkFiles(socketInput, socketOutput);
+                        if (!checkRewritableFiles(socketInput, socketOutput)) {
+                            rewriteEditedFiles();
+                        }
                         break;
                     }
                     else {
@@ -163,7 +171,8 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
-        filesToCheckSummary = Server.generateServerFilesSummary();
+        filesToCheckSummary = Server.generateServerFilesSummary(filesToCheck);
+        filesToReplaceSummary = Server.generateServerFilesSummary(filesToReplace);
         Server.startServer();
 
     }
