@@ -23,13 +23,13 @@ public class Server {
     static {
         BasicConfigurator.configure();
     }
-    private static List<Path> filesToCheck;
+    private static List<Path> filesWithAlert;
     private static List<Path> filesToReplace;
     static {
-        filesToCheck = new ArrayList<>();
-        filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile1.txt"));
-        filesToCheck.add(Paths.get("src/main/resources/server/examples/testFile2.txt"));
-        logger.info("All users will be checked for editing next files:" + filesToCheck);
+        filesWithAlert = new ArrayList<>();
+        filesWithAlert.add(Paths.get("src/main/resources/server/examples/testFile1.txt"));
+        filesWithAlert.add(Paths.get("src/main/resources/server/examples/testFile2.txt"));
+        logger.info("All users will be checked for editing next files:" + filesWithAlert);
 
         filesToReplace = new ArrayList<>();
         filesToReplace.add(Paths.get("src/main/resources/server/examples/replacableFile.txt"));
@@ -39,6 +39,7 @@ public class Server {
     private static String filesToCheckSummary;
     private static String filesToReplaceSummary;
 
+    //TODO replace with hash-function
     private static String generateServerFilesSummary(List<Path> filesToCheck) throws IOException{
         StringBuilder filesCheckSummary = new StringBuilder();
         for (Path file: filesToCheck) {
@@ -83,12 +84,12 @@ public class Server {
         }
 
         private void checkFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
-            if (filesToCheck.size() == 0) return;
+            if (filesWithAlert.size() == 0) return;
             StringBuilder filePathsToCheck = new StringBuilder();
 
-            filePathsToCheck.append(filesToCheck.get(0).getFileName());
-            for (int i = 1; i < filesToCheck.size(); i++) {
-                filePathsToCheck.append("\n").append(filesToCheck.get(i).getFileName());
+            filePathsToCheck.append(filesWithAlert.get(0).getFileName());
+            for (int i = 1; i < filesWithAlert.size(); i++) {
+                filePathsToCheck.append("\n").append(filesWithAlert.get(i).getFileName());
             }
             serverOutput.println(filePathsToCheck.toString());
             serverOutput.flush();
@@ -130,9 +131,14 @@ public class Server {
                         socketOutput.flush();
                         logger.info("User " + userName + " successfully login, start checking files");
                         checkFiles(socketInput, socketOutput);
-                        if (!checkRewritableFiles(socketInput, socketOutput)) {
+                        if (checkRewritableFiles(socketInput, socketOutput)) {
+                            logger.info("User's important files are OK");
+                        }
+                        else {
+                            logger.warn("User's important files will be reload");
                             rewriteEditedFiles();
                         }
+
                         break;
                     }
                     else {
@@ -170,7 +176,7 @@ public class Server {
     }
 
     public static void main(String[] args) throws Exception {
-        filesToCheckSummary = Server.generateServerFilesSummary(filesToCheck);
+        filesToCheckSummary = Server.generateServerFilesSummary(filesWithAlert);
         filesToReplaceSummary = Server.generateServerFilesSummary(filesToReplace);
         Server.startServer();
 
