@@ -104,8 +104,7 @@ public class Server {
                 logger.info("This user's file are OK");
             }
             else {
-                logger.warn("This user's file was modified");
-                System.out.println(clientUserSummary.toString() + "\n\n===\n\n " + filesToCheckSummary) ;
+                logger.warn("This user's file was modified:\n{}", clientUserSummary.toString() + "\n\n===\n\n" + filesToCheckSummary);
             }
         }
 
