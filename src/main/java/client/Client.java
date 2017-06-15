@@ -34,7 +34,7 @@ public class Client {
             e.printStackTrace();
         }
     }
-
+    //TODO generate hash instead of sending the whole files' content
     private static String generateFilesCheckSummary(String fileNames) throws IOException {
         StringBuilder filesCheckSummary = new StringBuilder();
         String[] fileNamesArray = fileNames.split("\n");

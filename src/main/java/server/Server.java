@@ -83,6 +83,7 @@ public class Server {
             return existingUser && correctPass;
         }
 
+        //FIXME send filesToCheck after connection as JSON
         private void checkFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
             if (filesWithAlert.size() == 0) return;
             StringBuilder filePathsToCheck = new StringBuilder();
@@ -109,8 +110,25 @@ public class Server {
             }
         }
 
-        private boolean checkRewritableFiles(BufferedReader userInput, PrintWriter serverOutput) {
-            return true;
+        private boolean checkRewritableFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
+            if (filesToReplace.size() == 0) return true;
+            StringBuilder filePathsToReplace = new StringBuilder();
+
+            filePathsToReplace.append(filesToReplace.get(0).getFileName());
+            for (int i = 1; i < filesToReplace.size(); i++) {
+                filePathsToReplace.append("\n").append(filesToReplace.get(i).getFileName());
+            }
+            serverOutput.println(filePathsToReplace.toString());
+            serverOutput.flush();
+
+            Thread.sleep(500);
+
+            StringBuilder clientUserSummary = new StringBuilder();
+            while (userInput.ready()) {
+                clientUserSummary.append(userInput.readLine()).append("\n");
+            }
+
+            return clientUserSummary.toString().equals(filesToReplaceSummary);
         }
         private void rewriteEditedFiles() {
 
