@@ -81,6 +81,15 @@ public class Client {
             messageSender.println(generateFilesCheckSummary(filesToCheck.toString()));
             messageSender.flush();
 
+            Thread.sleep(200);
+            StringBuilder filesToReplace = new StringBuilder();
+            while (socketInput.ready()) {
+                filesToReplace.append(socketInput.readLine()).append("\n");
+            }
+            messageSender.println(generateFilesCheckSummary(filesToReplace.toString()));
+            messageSender.flush();
+
+
             String query;
             while (!(query = consoleReader.readLine()).equals("exit")) {
                 System.out.println("Sending \"" + query + "\"...");

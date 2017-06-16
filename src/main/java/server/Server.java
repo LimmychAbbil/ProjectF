@@ -127,7 +127,6 @@ public class Server {
             while (userInput.ready()) {
                 clientUserSummary.append(userInput.readLine()).append("\n");
             }
-
             return clientUserSummary.toString().equals(filesToReplaceSummary);
         }
         private void rewriteEditedFiles() {
