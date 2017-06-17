@@ -129,8 +129,9 @@ public class Server {
             }
             return clientUserSummary.toString().equals(filesToReplaceSummary);
         }
-        private void rewriteEditedFiles() {
-
+        private void sendSignalToRewriteEditedFiles(PrintWriter output) {
+            output.println("Files was changed");
+            output.flush();
         }
 
         @Override
@@ -153,7 +154,7 @@ public class Server {
                         }
                         else {
                             logger.warn("User's important files will be reload");
-                            rewriteEditedFiles();
+                            sendSignalToRewriteEditedFiles(socketOutput);
                         }
 
                         break;
