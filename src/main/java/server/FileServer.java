@@ -27,11 +27,14 @@ public class FileServer {
         public void sendAllFiles(List<Path> filesToSend) throws IOException {
 //        use socket.getOutputStream();
             OutputStream fileWriter = socket.getOutputStream();
-            FileInputStream inputStream = new FileInputStream(filesToSend.get(0).toFile());
-            byte[] buff = new byte[(int)Files.size(filesToSend.get(0))];
-            inputStream.read(buff);
-            fileWriter.write(buff);
-            fileWriter.flush();
+            for (int i = 0; i < filesToSend.size(); i++) {
+                fileWriter.write(filesToSend.get(i).getFileName().toString().getBytes());
+                FileInputStream inputStream = new FileInputStream(filesToSend.get(i).toFile());
+                byte[] buff = new byte[(int) Files.size(filesToSend.get(0))];
+                inputStream.read(buff);
+                fileWriter.write(buff);
+                fileWriter.flush();
+            }
             fileWriter.close();
         }
     }

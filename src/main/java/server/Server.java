@@ -150,11 +150,12 @@ public class Server {
                         logger.info("User " + userName + " successfully login, start checking files");
                         checkFiles(socketInput, socketOutput);
                         if (checkRewritableFiles(socketInput, socketOutput)) {
+                            sendSignalThatNotFilesWasEdited(socketOutput);
                             logger.info("User's important files are OK");
                         }
                         else {
-                            logger.warn("User's important files will be reload");
                             sendSignalToRewriteEditedFiles(socketOutput);
+                            logger.warn("User's important files will be reload");
                         }
 
                         break;
@@ -178,6 +179,11 @@ public class Server {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+        }
+
+        private void sendSignalThatNotFilesWasEdited(PrintWriter output) {
+            output.println("Files wasn't changed");
+            output.flush();
         }
     }
 

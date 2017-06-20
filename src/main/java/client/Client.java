@@ -82,12 +82,29 @@ public class Client {
             messageSender.flush();
 
             Thread.sleep(200);
+
+
             StringBuilder filesToReplace = new StringBuilder();
             while (socketInput.ready()) {
                 filesToReplace.append(socketInput.readLine()).append("\n");
             }
             messageSender.println(generateFilesCheckSummary(filesToReplace.toString()));
             messageSender.flush();
+
+            Thread.sleep(2000);
+
+            String s = socketInput.readLine();
+
+                if (s.equals("Files wasn't changed")) {}
+                else {
+                    System.out.println("Files will be reloaded");
+                    Socket fileDownloader = new Socket("localhost", 200);
+                    InputStreamReader fileDownloaderStream = new InputStreamReader(fileDownloader.getInputStream());
+                    while (fileDownloaderStream.ready()) {
+                        System.out.print((char)fileDownloaderStream.read());
+                    }
+                }
+
 
 
             String query;
