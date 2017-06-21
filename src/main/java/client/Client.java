@@ -67,10 +67,12 @@ public class Client {
             boolean fileCheckCompleted = false;
             while (!isAuthorized) {
                 inputCredentials();
-                messageSender.println(userName + "_ _" + userPassword);
+                messageSender.println("Auth " + userName + " " + userPassword);
                 messageSender.flush();
                 Thread.sleep(200);
-                isAuthorized = socketInput.readLine().equals("Success");
+                String answer = socketInput.readLine();
+                System.out.println(answer);
+                isAuthorized = answer.equals("Success");
             }
 
             Thread.sleep(200);

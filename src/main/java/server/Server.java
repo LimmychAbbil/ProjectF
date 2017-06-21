@@ -139,15 +139,30 @@ public class Server {
 
             try (BufferedReader socketInput = new BufferedReader(new InputStreamReader(userSocket.getInputStream()));
             PrintWriter socketOutput = new PrintWriter(userSocket.getOutputStream())){
-                logger.info("Authorising user...");
+                logger.info("Authorising user first...");
                 while (true) {
-                    String credentials = socketInput.readLine();
-                    String userName = credentials.split("_ _")[0];
-                    String userPassword = credentials.split("_ _")[1];
-                    if (checkAuth(userName, userPassword)) {
-                        socketOutput.println("Success");
+                    String command = socketInput.readLine();
+                    if (command.toLowerCase().startsWith("auth")) {
+                        String userName = command.split(" ")[1];
+                        String userPassword = command.split(" ")[2];
+                        if (checkAuth(userName, userPassword)) {
+                            socketOutput.println("Success");
+                            socketOutput.flush();
+                            logger.info("User " + userName + " successfully login, start checking files");
+                            break;
+                        } else {
+                            logger.info("User " + userName + " input wrong credentials");
+                            socketOutput.println("Wrong credentials");
+                            socketOutput.flush();
+                        }
+                    }
+                    else {
+                        socketOutput.println("Authorize first");
                         socketOutput.flush();
-                        logger.info("User " + userName + " successfully login, start checking files");
+                    }
+                }
+
+                while (true) {
                         checkFiles(socketInput, socketOutput);
                         if (checkRewritableFiles(socketInput, socketOutput)) {
                             sendSignalThatNotFilesWasEdited(socketOutput);
@@ -159,12 +174,6 @@ public class Server {
                         }
 
                         break;
-                    }
-                    else {
-                        logger.info("User " + userName + " input wrong credentials");
-                        socketOutput.println("Wrong credentials");
-                        socketOutput.flush();
-                    }
                 }
                 logger.info("Start processing user command");
 
