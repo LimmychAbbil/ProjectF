@@ -36,24 +36,19 @@ public class Client {
             e.printStackTrace();
         }
     }
-    //TODO generate hash instead of sending the whole files' content
-    private static String generateFilesCheckSummary(String fileNames) throws IOException {
-        StringBuilder filesCheckSummary = new StringBuilder();
-        String[] fileNamesArray = fileNames.split("\n");
-        for (String fileName:fileNamesArray) {
-            Path p = Paths.get("src/main/resources/client.examples/" + fileName);
-            if (!Files.exists(p)) {
-                System.out.println("Files doesn't exists " + p.getFileName());
-                continue;
-            }
-            BufferedReader fileReader = new BufferedReader(new FileReader(p.toFile()));
-            while (fileReader.ready()) {
-                filesCheckSummary.append(fileReader.readLine()).append("\n");
-            }
 
-            fileReader.close();
+    private static String generateFilesCheckSummary(List<Path> files) throws IOException {
+        StringBuilder fileContent = new StringBuilder();
+        for (Path p: files) {
+            if (Files.exists(p)) {
+                try (FileReader fr = new FileReader(p.toFile())) {
+                    while (fr.ready()) {
+                        fileContent.append((char)fr.read());
+                    }
+                }
+            }
         }
-        return filesCheckSummary.toString().trim();
+        return fileContent.toString().hashCode() + "";
     }
 
 
@@ -64,12 +59,9 @@ public class Client {
         while (true) {
             String answerLine = socketInput.readLine();
             if (answerLine.isEmpty()) break;
-            if (answerLine.startsWith("WARNING")) filesWithAlert.add(Paths.get(answerLine.split(":")[1]));
-            if (answerLine.startsWith("CHECK")) filesToReplace.add(Paths.get(answerLine.split(":")[1]));
+            if (answerLine.startsWith("WARNING")) filesWithAlert.add(Paths.get("src/main/resources/client/examples/" + answerLine.split(":")[1]));
+            if (answerLine.startsWith("CHECK")) filesToReplace.add(Paths.get("src/main/resources/client/examples/" + answerLine.split(":")[1]));
         }
-
-        System.out.println(filesWithAlert);
-        System.out.println(filesToReplace);
     }
 
     public static void connect() {
@@ -94,20 +86,14 @@ public class Client {
                 isAuthorized = answer.equals("Success");
             }
 
-            /*messageSender.println("checkmyfiles");
-            messageSender.flush();
-            Thread.sleep(2000);
-            StringBuilder filesToCheck = new StringBuilder();
-            while (socketInput.ready()) {
-                filesToCheck.append(socketInput.readLine()).append("\n");
-            }
-            messageSender.println(generateFilesCheckSummary(filesToCheck.toString()));
+            String s = generateFilesCheckSummary(filesWithAlert);
+            messageSender.println("checkmywarningfiles " + s);
             messageSender.flush();
 
-            Thread.sleep(200);
+            System.out.println("Send my summary: " + s);
 
 
-            StringBuilder filesToReplace = new StringBuilder();
+            /* StringBuilder filesToReplace = new StringBuilder();
             while (socketInput.ready()) {
                 filesToReplace.append(socketInput.readLine()).append("\n");
             }

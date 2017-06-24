@@ -39,19 +39,18 @@ public class Server {
     private static String filesToCheckSummary;
     private static String filesToReplaceSummary;
 
-    //TODO replace with hash-function
     private static String generateServerFilesSummary(List<Path> filesToCheck) throws IOException{
         StringBuilder filesCheckSummary = new StringBuilder();
         for (Path file: filesToCheck) {
             if (!Files.exists(file)) continue;
-            BufferedReader fileReader = new BufferedReader(new FileReader(file.toFile()));
+            FileReader fileReader = new FileReader(file.toFile());
             while (fileReader.ready()) {
-                filesCheckSummary.append(fileReader.readLine()).append("\n");
+                filesCheckSummary.append((char)fileReader.read());
             }
 
             fileReader.close();
         }
-        return filesCheckSummary.toString();
+        return filesCheckSummary.toString().hashCode() + "";
     }
 
     private static Set<User> users;
@@ -83,34 +82,16 @@ public class Server {
             return existingUser && correctPass;
         }
 
-        //FIXME send filesToCheck after connection as JSON
-        private void checkFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
-            if (filesWithAlert.size() == 0) return;
-            StringBuilder filePathsToCheck = new StringBuilder();
-
-            filePathsToCheck.append(filesWithAlert.get(0).getFileName());
-            for (int i = 1; i < filesWithAlert.size(); i++) {
-                filePathsToCheck.append("\n").append(filesWithAlert.get(i).getFileName());
-            }
-            serverOutput.println(filePathsToCheck.toString());
-            serverOutput.flush();
-
-            Thread.sleep(500);
-
-            StringBuilder clientUserSummary = new StringBuilder();
-            while (userInput.ready()) {
-                clientUserSummary.append(userInput.readLine()).append("\n");
-            }
-
-            if (clientUserSummary.toString().equals(filesToCheckSummary)) {
+        private void checkFiles(String clientFilesSummary, BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
+            if (clientFilesSummary.toString().equals(filesToCheckSummary)) {
                 logger.info("This user's file are OK");
             }
             else {
-                logger.warn("This user's file was modified:\n{}", clientUserSummary.toString() + "\n\n===\n\n" + filesToCheckSummary);
+                logger.warn("This user's file was modified:\n{}", clientFilesSummary.toString() + "\n=====\n" + filesToCheckSummary);
             }
         }
 
-        private boolean checkRewritableFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
+        /*private boolean checkRewritableFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
             if (filesToReplace.size() == 0) return true;
             StringBuilder filePathsToReplace = new StringBuilder();
 
@@ -128,11 +109,11 @@ public class Server {
                 clientUserSummary.append(userInput.readLine()).append("\n");
             }
             return clientUserSummary.toString().equals(filesToReplaceSummary);
-        }
-        private void sendSignalToRewriteEditedFiles(PrintWriter output) {
+        }*/
+        /*private void sendSignalToRewriteEditedFiles(PrintWriter output) {
             output.println("Files was changed");
             output.flush();
-        }
+        }*/
 
         @Override
         public void run() {
@@ -168,15 +149,16 @@ public class Server {
                 while (true) {
                     if (socketInput.ready()) {
                         String command = socketInput.readLine();
-                        if (command.toLowerCase().equals("checkmyfiles")) {
-                            checkFiles(socketInput, socketOutput);
-                            if (checkRewritableFiles(socketInput, socketOutput)) {
+                        if (command.toLowerCase().startsWith("checkmywarningfiles")) {
+                            String userSummary = command.split(" ")[1];
+                            checkFiles(userSummary, socketInput, socketOutput);
+                            /*if (checkRewritableFiles(socketInput, socketOutput)) {
                                 sendSignalThatNotFilesWasEdited(socketOutput);
                                 logger.info("User's important files are OK");
                             } else {
                                 sendSignalToRewriteEditedFiles(socketOutput);
                                 logger.warn("User's important files will be reload");
-                            }
+                            }*/
 
                             break;
                         }
