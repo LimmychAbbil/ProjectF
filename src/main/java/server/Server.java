@@ -82,7 +82,7 @@ public class Server {
             return existingUser && correctPass;
         }
 
-        private void checkFiles(String clientFilesSummary, BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
+        private void checkFiles(String clientFilesSummary) throws IOException, InterruptedException {
             if (clientFilesSummary.toString().equals(filesToCheckSummary)) {
                 logger.info("This user's file are OK");
             }
@@ -91,29 +91,22 @@ public class Server {
             }
         }
 
-        /*private boolean checkRewritableFiles(BufferedReader userInput, PrintWriter serverOutput) throws IOException, InterruptedException {
-            if (filesToReplace.size() == 0) return true;
-            StringBuilder filePathsToReplace = new StringBuilder();
-
-            filePathsToReplace.append(filesToReplace.get(0).getFileName());
-            for (int i = 1; i < filesToReplace.size(); i++) {
-                filePathsToReplace.append("\n").append(filesToReplace.get(i).getFileName());
+        private boolean checkRewritableFiles (String clientFilesSummary, PrintWriter serverOutput) throws IOException {
+            if (clientFilesSummary.toString().equals(filesToReplaceSummary)) {
+                logger.info("This user's important file are OK");
+                serverOutput.println("OK");
+                serverOutput.flush();
+                return true;
             }
-            serverOutput.println(filePathsToReplace.toString());
-            serverOutput.flush();
-
-            Thread.sleep(500);
-
-            StringBuilder clientUserSummary = new StringBuilder();
-            while (userInput.ready()) {
-                clientUserSummary.append(userInput.readLine()).append("\n");
+            else {
+                logger.warn("This user's important file was modified " +
+                        "and should be redownload:\n{}", clientFilesSummary.toString() + "\n=====\n" + filesToCheckSummary);
+                serverOutput.println("Redownload files");
+                serverOutput.flush();
+                return false;
             }
-            return clientUserSummary.toString().equals(filesToReplaceSummary);
-        }*/
-        /*private void sendSignalToRewriteEditedFiles(PrintWriter output) {
-            output.println("Files was changed");
-            output.flush();
-        }*/
+        }
+
 
         @Override
         public void run() {
@@ -151,20 +144,11 @@ public class Server {
                         String command = socketInput.readLine();
                         if (command.toLowerCase().startsWith("checkmywarningfiles")) {
                             String userSummary = command.split(" ")[1];
-                            checkFiles(userSummary, socketInput, socketOutput);
-                            /*if (checkRewritableFiles(socketInput, socketOutput)) {
-                                sendSignalThatNotFilesWasEdited(socketOutput);
-                                logger.info("User's important files are OK");
-                            } else {
-                                sendSignalToRewriteEditedFiles(socketOutput);
-                                logger.warn("User's important files will be reload");
-                            }*/
-
-                            break;
+                            checkFiles(userSummary);
                         }
-                        else {
-                            socketOutput.println("Check your files first");
-                            socketOutput.flush();
+                        else if (command.toLowerCase().startsWith("checkmyimportantfiles")) {
+                            String userSummary = command.split(" ")[1];
+                            if (checkRewritableFiles(userSummary, socketOutput)) break;
                         }
                     }
                 }
@@ -198,11 +182,6 @@ public class Server {
                 socketOutput.println("");
                 socketOutput.flush();
             }
-        }
-
-        private void sendSignalThatNotFilesWasEdited(PrintWriter output) {
-            output.println("Files wasn't changed");
-            output.flush();
         }
     }
 

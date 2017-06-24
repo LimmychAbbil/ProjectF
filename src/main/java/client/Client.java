@@ -3,6 +3,7 @@ package client;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -86,37 +87,29 @@ public class Client {
                 isAuthorized = answer.equals("Success");
             }
 
-            String s = generateFilesCheckSummary(filesWithAlert);
-            messageSender.println("checkmywarningfiles " + s);
+            String summary = generateFilesCheckSummary(filesWithAlert);
+            messageSender.println("checkmywarningfiles " + summary);
             messageSender.flush();
 
-            System.out.println("Send my summary: " + s);
-
-
-            /* StringBuilder filesToReplace = new StringBuilder();
-            while (socketInput.ready()) {
-                filesToReplace.append(socketInput.readLine()).append("\n");
-            }
-            messageSender.println(generateFilesCheckSummary(filesToReplace.toString()));
+            summary = generateFilesCheckSummary(filesToReplace);
+            messageSender.println("checkmyimportantfiles " + summary);
             messageSender.flush();
 
-            Thread.sleep(2000);
-
-            String s = socketInput.readLine();
-
-                if (s.equals("Files wasn't changed")) {}
-                else {
-                    System.out.println("Files will be reloaded");
-                    Socket fileDownloader = new Socket("localhost", 200);
-                    InputStreamReader fileDownloaderStream = new InputStreamReader(fileDownloader.getInputStream());
-                    while (fileDownloaderStream.ready()) {
-                        System.out.print((char)fileDownloaderStream.read());
+            while (true) {
+                if (socketInput.ready()) {
+                    String answer = socketInput.readLine();
+                    if (answer.equals("OK")) break;
+                    else {
+                        System.out.println("Important files are different from servers, they will be redownload");
+                        redownloadImportantFilesFromFileServer();
+                        messageSender.println("checkmyimportantfiles " + generateFilesCheckSummary(filesToReplace));
+                        messageSender.flush();
                     }
                 }
-*/
+            }
 
-
-          /*  String query;
+            System.out.println("Please write your messages (or 'exit')");
+            String query;
             while (!(query = consoleReader.readLine()).equals("exit")) {
                 System.out.println("Sending \"" + query + "\"...");
 
@@ -127,12 +120,33 @@ public class Client {
 
             messageSender.println("exit");
             messageSender.flush();
-            System.out.println("Exit command");*/
-            messageSender.close();
+            System.out.println("Exit command");
         }
         catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    private static void redownloadImportantFilesFromFileServer() throws IOException {
+        Socket fileDownloadSocket = new Socket("localhost", 200);
+        try (PrintWriter os = new PrintWriter(fileDownloadSocket.getOutputStream());
+        InputStream is = fileDownloadSocket.getInputStream()){
+            for (Path p : filesToReplace) {
+                Files.deleteIfExists(p);
+                os.println("download " + p.getFileName());
+                os.flush();
+                FileOutputStream fos = new FileOutputStream("src/main/resources/client/examples/" + p.getFileName());
+                while (true) {
+                    if (is.available() > 0) {
+                        int b = is.read();
+                        if (b == 255) break;
+                        fos.write(b);
+                    }
+                }
+                fos.close();
+            }
+        }
+        catch (SocketException e) {e.printStackTrace();}
     }
 
 

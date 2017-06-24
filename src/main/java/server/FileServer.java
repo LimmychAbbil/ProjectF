@@ -1,5 +1,6 @@
 package server;
 
+import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,9 @@ import java.util.List;
  */
 public class FileServer {
     private final static Logger logger = LoggerFactory.getLogger(FileServer.class);
+    static {
+        BasicConfigurator.configure();
+    }
 
     private class FileSender extends Thread {
         Socket socket;
@@ -24,18 +28,33 @@ public class FileServer {
             this.socket = socket;
         }
 
-        public void sendAllFiles(List<Path> filesToSend) throws IOException {
-//        use socket.getOutputStream();
-            OutputStream fileWriter = socket.getOutputStream();
-            for (int i = 0; i < filesToSend.size(); i++) {
-                fileWriter.write(filesToSend.get(i).getFileName().toString().getBytes());
-                FileInputStream inputStream = new FileInputStream(filesToSend.get(i).toFile());
-                byte[] buff = new byte[(int) Files.size(filesToSend.get(0))];
-                inputStream.read(buff);
-                fileWriter.write(buff);
-                fileWriter.flush();
+        public void run() {
+            try (BufferedReader is = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+                OutputStream os = socket.getOutputStream()){
+                while (true) {
+                    if (is.ready()) {
+                        String command = is.readLine();
+                        if (command.equals("exit")) break;
+                        else if (command.toLowerCase().startsWith("download")) {
+                            String fileName = command.split(" ")[1];
+                            logger.info("Send " + fileName + " to client");
+                            sendFile(os, fileName);
+                        }
+                    }
+                }
             }
-            fileWriter.close();
+            catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        private void sendFile(OutputStream os, String fileName) throws IOException {
+            FileInputStream fis = new FileInputStream("src/main/resources/server/examples/" + fileName);
+            while (fis.available() > 0) {
+                os.write(fis.read());
+            }
+            os.write(-1);
+            fis.close();
         }
     }
 
@@ -44,9 +63,7 @@ public class FileServer {
 
             while (true) {
                 Socket client = fileServerSocket.accept();
-                List<Path> stubList = new ArrayList<>();
-                stubList.add(Paths.get("src/main/resources/server/examples/replacableFile.txt"));
-                new FileSender(client).sendAllFiles(stubList);
+                new FileSender(client).start();
             }
         }
         catch (IOException e) {
@@ -57,6 +74,5 @@ public class FileServer {
     public static void main(String[] args) {
         logger.info("File Server is starting...");
         new FileServer().startFileServer();
-        logger.info("File Server is started");
     }
 }
