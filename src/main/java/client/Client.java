@@ -6,7 +6,7 @@ import java.net.SocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
+import java.util.*;
 
 /**
  * Created by Limmy on 27.05.2017.
@@ -18,6 +18,8 @@ public class Client {
     private static String userPassword;
     private static BufferedReader consoleReader = new BufferedReader(new InputStreamReader(System.in));
 
+    private static List<Path> filesWithAlert = new ArrayList<>();
+    private static List<Path> filesToReplace = new ArrayList<>();
     public static void main(String[] args) {
 
         Client.connect();
@@ -55,6 +57,21 @@ public class Client {
     }
 
 
+    private static void getListOfFiles(PrintWriter messageSender, BufferedReader socketInput) throws Exception{
+        messageSender.println("sendlistoffiles");
+        messageSender.flush();
+
+        while (true) {
+            String answerLine = socketInput.readLine();
+            if (answerLine.isEmpty()) break;
+            if (answerLine.startsWith("WARNING")) filesWithAlert.add(Paths.get(answerLine.split(":")[1]));
+            if (answerLine.startsWith("CHECK")) filesToReplace.add(Paths.get(answerLine.split(":")[1]));
+        }
+
+        System.out.println(filesWithAlert);
+        System.out.println(filesToReplace);
+    }
+
     public static void connect() {
         host = "localhost";
         port = 31;
@@ -65,6 +82,8 @@ public class Client {
             Thread.sleep(2000);
             boolean isAuthorized = false;
             boolean fileCheckCompleted = false;
+
+            getListOfFiles(messageSender, socketInput);
             while (!isAuthorized) {
                 inputCredentials();
                 messageSender.println("Auth " + userName + " " + userPassword);
@@ -75,7 +94,9 @@ public class Client {
                 isAuthorized = answer.equals("Success");
             }
 
-            Thread.sleep(200);
+            /*messageSender.println("checkmyfiles");
+            messageSender.flush();
+            Thread.sleep(2000);
             StringBuilder filesToCheck = new StringBuilder();
             while (socketInput.ready()) {
                 filesToCheck.append(socketInput.readLine()).append("\n");
@@ -106,10 +127,10 @@ public class Client {
                         System.out.print((char)fileDownloaderStream.read());
                     }
                 }
+*/
 
 
-
-            String query;
+          /*  String query;
             while (!(query = consoleReader.readLine()).equals("exit")) {
                 System.out.println("Sending \"" + query + "\"...");
 
@@ -120,7 +141,7 @@ public class Client {
 
             messageSender.println("exit");
             messageSender.flush();
-            System.out.println("Exit command");
+            System.out.println("Exit command");*/
             messageSender.close();
         }
         catch (Exception e) {

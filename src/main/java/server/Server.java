@@ -156,6 +156,9 @@ public class Server {
                             socketOutput.flush();
                         }
                     }
+                    else if (command.equals("sendlistoffiles")) {
+                        sendListOfFiles(socketOutput);
+                    }
                     else {
                         socketOutput.println("Authorize first");
                         socketOutput.flush();
@@ -163,17 +166,25 @@ public class Server {
                 }
 
                 while (true) {
-                        checkFiles(socketInput, socketOutput);
-                        if (checkRewritableFiles(socketInput, socketOutput)) {
-                            sendSignalThatNotFilesWasEdited(socketOutput);
-                            logger.info("User's important files are OK");
+                    if (socketInput.ready()) {
+                        String command = socketInput.readLine();
+                        if (command.toLowerCase().equals("checkmyfiles")) {
+                            checkFiles(socketInput, socketOutput);
+                            if (checkRewritableFiles(socketInput, socketOutput)) {
+                                sendSignalThatNotFilesWasEdited(socketOutput);
+                                logger.info("User's important files are OK");
+                            } else {
+                                sendSignalToRewriteEditedFiles(socketOutput);
+                                logger.warn("User's important files will be reload");
+                            }
+
+                            break;
                         }
                         else {
-                            sendSignalToRewriteEditedFiles(socketOutput);
-                            logger.warn("User's important files will be reload");
+                            socketOutput.println("Check your files first");
+                            socketOutput.flush();
                         }
-
-                        break;
+                    }
                 }
                 logger.info("Start processing user command");
 
@@ -187,6 +198,23 @@ public class Server {
                 logger.info("User disconnected");
             } catch (Exception e) {
                 e.printStackTrace();
+            }
+        }
+
+        private void sendListOfFiles(PrintWriter socketOutput) {
+            if (filesWithAlert.size() == 0) {
+                socketOutput.println();
+                socketOutput.flush();
+            }
+            else {
+                for (Path p: filesWithAlert) {
+                    socketOutput.println("WARNING:" + p.getFileName());
+                }
+                for (Path p: filesToReplace) {
+                    socketOutput.println("CHECK:" + p.getFileName());
+                }
+                socketOutput.println("");
+                socketOutput.flush();
             }
         }
 
