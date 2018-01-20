@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
+import common.ClientServerUtils;
 import org.apache.log4j.BasicConfigurator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,25 +118,23 @@ public class Server {
                 while (true) {
                     String command = socketInput.readLine();
                     if (command.toLowerCase().startsWith("auth")) {
-                        String userName = command.split(" ")[1];
-                        String userPassword = command.split(" ")[2];
+                        String[] params = command.split(" ");
+                        String userName = params[1];
+                        String userPassword = params[2];
                         if (checkAuth(userName, userPassword)) {
-                            socketOutput.println("Success");
-                            socketOutput.flush();
+                            ClientServerUtils.sendMessage(socketOutput, "Success");
                             logger.info("User " + userName + " successfully login, start checking files");
                             break;
                         } else {
                             logger.info("User " + userName + " input wrong credentials");
-                            socketOutput.println("Wrong credentials");
-                            socketOutput.flush();
+                            ClientServerUtils.sendMessage(socketOutput, "Wrong credentials");
                         }
                     }
                     else if (command.equals("sendlistoffiles")) {
                         sendListOfFiles(socketOutput);
                     }
                     else {
-                        socketOutput.println("Authorize first");
-                        socketOutput.flush();
+                        ClientServerUtils.sendMessage(socketOutput, "Authorize first");
                     }
                 }
 
@@ -168,20 +167,16 @@ public class Server {
         }
 
         private void sendListOfFiles(PrintWriter socketOutput) {
-            if (filesWithAlert.size() == 0) {
-                socketOutput.println();
-                socketOutput.flush();
-            }
-            else {
+            if (filesWithAlert.size() != 0) {
                 for (Path p: filesWithAlert) {
                     socketOutput.println("WARNING:" + p.getFileName());
                 }
                 for (Path p: filesToReplace) {
                     socketOutput.println("CHECK:" + p.getFileName());
                 }
-                socketOutput.println("");
-                socketOutput.flush();
             }
+
+            ClientServerUtils.sendMessage(socketOutput, "");
         }
     }
 
